@@ -1,0 +1,219 @@
+# SMLGPT V2.0 - AI Safety Analysis Platform
+
+A comprehensive workplace safety analysis platform powered by Azure AI services, featuring real-time hazard detection, compliance checking, and intelligent safety recommendations.
+
+## Features
+
+- 🎯 **Real-time Hazard Detection** - Analyzes images, videos, and documents for safety hazards
+- 🤖 **GPT-4.1 Vision Integration** - Advanced visual reasoning for complex safety scenarios
+- 📄 **Document Intelligence** - Extract safety data from PDFs, forms, and reports
+- 🎤 **Speech Integration** - Voice commands and text-to-speech safety instructions
+- 🔍 **Vector Search** - Semantic search across all safety data and historical analyses
+- 📊 **Compliance Checking** - OSHA and industry-specific compliance validation
+- 🚨 **Real-time Alerts** - Instant notifications for critical hazards
+- 📱 **Progressive Web App** - Works on desktop and mobile devices
+
+## Prerequisites
+
+- Node.js 18+ and npm
+- Redis server (for caching and job queues)
+- Azure account with the following services configured:
+  - Azure OpenAI (GPT-4.1 Vision and embed-v-4-0)
+  - Azure Computer Vision
+  - Azure Document Intelligence
+  - Azure Speech Services
+  - Azure Blob Storage
+  - Azure AI Search
+  - Azure Application Insights
+
+## Quick Start
+
+### 1. Clone and Install
+
+```bash
+# Clone the repository
+git clone [your-repo-url]
+cd smlgpt-v2
+
+# Install backend dependencies
+cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
+npm install
+```
+
+### 2. Configure Environment
+
+Copy your `.env` configuration to `backend/.env`
+
+### 3. Start Redis
+
+```bash
+# Using Docker
+docker run -d -p 6379:6379 redis:7-alpine
+
+# Or install locally
+# Mac: brew install redis && brew services start redis
+# Ubuntu: sudo apt-get install redis-server
+```
+
+### 4. Run the Application
+
+```bash
+# Terminal 1: Start backend
+cd backend
+npm run dev
+
+# Terminal 2: Start frontend
+cd frontend
+npm run dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+
+## Project Structure
+
+```
+smlgpt-v2/
+├── frontend/              # React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/    # UI components
+│   │   ├── hooks/        # Custom React hooks
+│   │   ├── types/        # TypeScript types
+│   │   └── App.tsx       # Main application
+│   └── package.json
+│
+├── backend/              # Node.js + Express backend
+│   ├── src/
+│   │   ├── routes/       # API endpoints
+│   │   ├── services/     # Azure service integrations
+│   │   ├── middleware/   # Express middleware
+│   │   ├── utils/        # Utilities
+│   │   └── server.ts     # Main server
+│   └── package.json
+│
+└── shared/              # Shared types and utilities
+    └── types/
+```
+
+## Usage
+
+1. **Upload Safety Content**
+   - Drag and drop images, videos, or documents
+   - Supports batch uploads up to 10 files
+
+2. **Real-time Analysis**
+   - AI analyzes content for hazards
+   - Results appear in real-time
+   - Critical hazards trigger immediate alerts
+
+3. **Chat Interface**
+   - Ask questions about safety
+   - Reference uploaded documents
+   - Get compliance recommendations
+
+4. **Voice Features**
+   - Click microphone to use voice input
+   - Enable auto-speak for voice responses
+   - Select from multiple voice options
+
+## API Endpoints
+
+- `POST /api/chat` - Send chat messages
+- `POST /api/upload` - Upload files for analysis
+- `GET /api/status` - Check service status
+- `POST /api/speech/synthesize` - Text-to-speech
+- `POST /api/speech/recognize` - Speech-to-text
+- `GET /api/documents/:id` - Retrieve document analysis
+
+## Development
+
+### Running Tests
+
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+### Building for Production
+
+```bash
+# Build backend
+cd backend
+npm run build
+
+# Build frontend
+cd frontend
+npm run build
+```
+
+### Docker Deployment
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+```
+
+## Architecture
+
+- **Frontend**: React 18 with TypeScript, Vite, Tailwind CSS
+- **Backend**: Node.js, Express, Socket.io for real-time updates
+- **Queue System**: BullMQ with Redis for async processing
+- **AI Services**: Azure OpenAI, Computer Vision, Document Intelligence
+- **Storage**: Azure Blob Storage for files
+- **Search**: Azure AI Search with vector embeddings
+- **Monitoring**: Azure Application Insights
+
+## Security Features
+
+- JWT authentication (ready to implement)
+- Rate limiting on API endpoints
+- Helmet.js for security headers
+- Input validation and sanitization
+- Secure file upload handling
+
+## Troubleshooting
+
+### Redis Connection Issues
+```bash
+# Check if Redis is running
+redis-cli ping
+# Should return: PONG
+```
+
+### Azure Service Errors
+- Verify all API keys in `.env`
+- Check Azure service quotas
+- Ensure services are in the correct regions
+
+### Upload Issues
+- Check file size limits (50MB max)
+- Verify Blob Storage permissions
+- Check CORS settings
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+[Your License]
+
+## Support
+
+For issues or questions:
+- Create an issue in the repository
+- Contact: [your-email]

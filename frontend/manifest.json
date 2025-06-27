@@ -1,0 +1,17 @@
+{
+  "short_name": "SMLGPT V2.0",
+  "name": "SMLGPT V2.0 - AI Workplace Safety Analysis",
+  "description": "Advanced AI-powered workplace safety analysis platform with GPT-4.1 and Azure Computer Vision",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#4ade80",
+  "background_color": "#ffffff",
+  "categories": ["productivity", "business", "safety"]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "SMLGPT V2.0 - AI Safety Analysis",
+  "short_name": "SMLGPT V2.0",
+  "description": "AI-Powered Workplace Safety Analysis Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2d5a27",
+  "theme_color": "#2d5a27",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/logos/main/sml-bow-tie-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logos/main/SML.svg.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
+}

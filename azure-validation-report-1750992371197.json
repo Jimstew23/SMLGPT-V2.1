@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-06-27T02:46:07.804Z",
+  "tests": {
+    "environmentValidation": {
+      "passed": true,
+      "results": {
+        "AZURE_OPENAI_API_KEY": "PRESENT",
+        "AZURE_OPENAI_ENDPOINT": "PRESENT",
+        "AZURE_COMPUTER_VISION_KEY": "PRESENT",
+        "AZURE_COMPUTER_VISION_ENDPOINT": "PRESENT",
+        "AZURE_STORAGE_CONNECTION_STRING": "PRESENT",
+        "AZURE_SEARCH_ENDPOINT": "PRESENT",
+        "AZURE_SEARCH_ADMIN_KEY": "PRESENT"
+      },
+      "timestamp": "2025-06-27T02:46:07.805Z"
+    },
+    "azureOpenAI": {
+      "passed": true,
+      "model": "gpt-4.1-2025-04-14",
+      "usage": {
+        "completion_tokens": 6,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens": 39,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0
+        },
+        "total_tokens": 45
+      },
+      "response": "SAFETY_TEST_SUCCESS",
+      "timestamp": "2025-06-27T02:46:08.724Z"
+    },
+    "azureComputerVision": {
+      "passed": false,
+      "error": "Request failed with status code 400",
+      "timestamp": "2025-06-27T02:46:09.609Z"
+    },
+    "azureBlobStorage": {
+      "passed": true,
+      "container": "smlgpt-files",
+      "timestamp": "2025-06-27T02:46:10.385Z"
+    },
+    "azureSearch": {
+      "passed": true,
+      "indexCount": 3,
+      "indexes": [
+        "smlgpt-index",
+        "smlgpt-safety-index",
+        "smlgpt-v2-index"
+      ],
+      "timestamp": "2025-06-27T02:46:11.197Z"
+    }
+  },
+  "services": {},
+  "summary": {
+    "totalTests": 5,
+    "passedTests": 4,
+    "failedTests": 1,
+    "successRate": "80%",
+    "overallStatus": "NEEDS_ATTENTION"
+  }
+}

@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: backend-metrics
+  namespace: smlgpt
+  labels:
+    app: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: frontend-metrics
+  namespace: smlgpt
+  labels:
+    app: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: smlgpt
+  labels:
+    grafana_dashboard: "1"
+data:
+  smlgpt-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "SMLGPT V2.0 Dashboard",
+        "tags": ["smlgpt"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "API Response Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m]))",
+                "legendFormat": "95th percentile"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"backend\"}[5m])",
+                "legendFormat": "Requests/sec"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])",
+                "legendFormat": "5xx errors/sec"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Azure AI Service Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "azure_openai_requests_total",
+                "legendFormat": "OpenAI Requests"
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "5s"
+      }
+    }
+
+---
+apiVersion: logging.coreos.com/v1
+kind: ClusterLogForwarder
+metadata:
+  name: smlgpt-logs
+  namespace: smlgpt
+spec:
+  outputs:
+  - name: azure-log-analytics
+    type: azureMonitor
+    azureMonitor:
+      workspaceId: "your-workspace-id"
+      sharedKey: "your-shared-key"
+  pipelines:
+  - name: smlgpt-application-logs
+    inputRefs:
+    - application
+    filterRefs:
+    - smlgpt-filter
+    outputRefs:
+    - azure-log-analytics
+
+---
+apiVersion: logging.coreos.com/v1
+kind: ClusterLogFilter
+metadata:
+  name: smlgpt-filter
+  namespace: smlgpt
+spec:
+  type: json
+  json:
+    javascript: |
+      const log = record.log;
+      if (log && (log.namespace === "smlgpt" || log.kubernetes?.namespace_name === "smlgpt")) {
+        return record;
+      }
+      return null;

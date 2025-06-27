@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-secrets
+  namespace: smlgpt
+type: Opaque
+data:
+  # Base64 encoded secrets - update with your actual values
+  azure-openai-api-key: eW91ci1henVyZS1vcGVuYWktYXBpLWtleQ==
+  azure-computer-vision-key: eW91ci1jb21wdXRlci12aXNpb24ta2V5
+  azure-document-intelligence-key: eW91ci1kb2N1bWVudC1pbnRlbGxpZ2VuY2Uta2V5
+  azure-storage-connection-string: eW91ci1zdG9yYWdlLWNvbm5lY3Rpb24tc3RyaW5n
+  azure-search-api-key: eW91ci1zZWFyY2gtYXBpLWtleQ==
+  azure-speech-key: eW91ci1zcGVlY2gta2V5
+  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWhlcmU=
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: smlgpt
+data:
+  NODE_ENV: "production"
+  PORT: "5000"
+  REDIS_URL: "redis://redis:6379"
+  AZURE_OPENAI_ENDPOINT: "https://your-resource.openai.azure.com/"
+  AZURE_OPENAI_GPT_MODEL: "gpt-4o"
+  AZURE_OPENAI_VISION_MODEL: "gpt-4o"
+  AZURE_OPENAI_EMBEDDING_MODEL: "text-embedding-ada-002"
+  AZURE_COMPUTER_VISION_ENDPOINT: "https://your-resource.cognitiveservices.azure.com/"
+  AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: "https://your-resource.cognitiveservices.azure.com/"
+  AZURE_STORAGE_CONTAINER_NAME: "smlgpt-uploads"
+  AZURE_SEARCH_ENDPOINT: "https://your-search-service.search.windows.net"
+  AZURE_SEARCH_INDEX_NAME: "smlgpt-safety-index"
+  AZURE_SPEECH_REGION: "eastus"
+  CORS_ORIGIN: "https://yourdomain.com"
+  LOG_LEVEL: "info"
+  ENABLE_MONITORING: "true"
+  ENABLE_RATE_LIMITING: "true"
+  MAX_REQUESTS_PER_MINUTE: "100"
+  MAX_FILE_SIZE_MB: "50"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: smlgpt
+  labels:
+    app: backend
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: smlgptregistry.azurecr.io/smlgpt-backend:latest
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        env:
+        - name: AZURE_OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: azure-openai-api-key
+        - name: AZURE_COMPUTER_VISION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: azure-computer-vision-key
+        - name: AZURE_DOCUMENT_INTELLIGENCE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: azure-document-intelligence-key
+        - name: AZURE_STORAGE_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: azure-storage-connection-string
+        - name: AZURE_SEARCH_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: azure-search-api-key
+        - name: AZURE_SPEECH_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: azure-speech-key
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: azure-secrets
+              key: jwt-secret
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        - name: logs
+          mountPath: /app/logs
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+      - name: logs
+        persistentVolumeClaim:
+          claimName: logs-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: smlgpt
+  labels:
+    app: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: backend
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+  namespace: smlgpt
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-pvc
+  namespace: smlgpt
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

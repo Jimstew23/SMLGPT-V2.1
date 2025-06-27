@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60">
+  <defs>
+    <!-- Blue gradient for left triangle -->
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4FC3F7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Red gradient for right triangle -->
+    <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF7043;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D32F2F;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Silver gradient for center band -->
+    <linearGradient id="silverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E0E0E0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#BDBDBD;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9E9E9E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Left blue triangle -->
+  <path d="M10 5 L50 5 L50 25 L10 30 L10 35 L50 30 L50 55 L10 55 Z" 
+        fill="url(#blueGradient)" 
+        stroke="#0D47A1" 
+        stroke-width="1"/>
+  
+  <!-- Right red triangle -->
+  <path d="M70 5 L110 5 L110 55 L70 55 L70 30 L110 35 L110 30 L70 25 Z" 
+        fill="url(#redGradient)" 
+        stroke="#B71C1C" 
+        stroke-width="1"/>
+  
+  <!-- Center connecting band -->
+  <rect x="48" y="23" width="24" height="14" 
+        fill="url(#silverGradient)" 
+        stroke="#757575" 
+        stroke-width="1" 
+        rx="2"/>
+  
+  <!-- Center shine effect -->
+  <rect x="50" y="25" width="20" height="4" 
+        fill="white" 
+        opacity="0.3"/>
+</svg>

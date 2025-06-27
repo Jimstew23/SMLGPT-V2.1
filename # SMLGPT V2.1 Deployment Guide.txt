@@ -1,0 +1,368 @@
+# SMLGPT V2.0 Deployment Guide
+
+## Production Deployment Options
+
+### Option 1: Azure Container Instances (Recommended for Small-Medium Scale)
+
+1. **Prepare Azure Resources**
+   ```bash
+   # Create resource group
+   az group create --name smlgpt-rg --location eastus2
+   
+   # Create Azure Container Registry
+   az acr create --resource-group smlgpt-rg --name smlgptregistry --sku Basic
+   
+   # Create Redis Cache
+   az redis create --resource-group smlgpt-rg --name smlgpt-redis --sku Basic --vm-size C0
+   ```
+
+2. **Build and Push Images**
+   ```bash
+   # Login to ACR
+   az acr login --name smlgptregistry
+   
+   # Build images
+   docker build -t smlgptregistry.azurecr.io/smlgpt-backend:latest ./backend
+   docker build -t smlgptregistry.azurecr.io/smlgpt-frontend:latest ./frontend
+   
+   # Push images
+   docker push smlgptregistry.azurecr.io/smlgpt-backend:latest
+   docker push smlgptregistry.azurecr.io/smlgpt-frontend:latest
+   ```
+
+3. **Deploy with Docker Compose to ACI**
+   ```bash
+   # Create ACI context
+   docker context create aci smlgpt-aci
+   
+   # Deploy
+   docker --context smlgpt-aci compose up
+   ```
+
+### Option 2: Azure Kubernetes Service (AKS) (Recommended for Large Scale)
+
+1. **Create AKS Cluster**
+   ```bash
+   az aks create \
+     --resource-group smlgpt-rg \
+     --name smlgpt-aks \
+     --node-count 3 \
+     --enable-addons monitoring \
+     --generate-ssh-keys
+   ```
+
+2. **Deploy with Helm**
+   ```bash
+   # Install Helm chart
+   helm install smlgpt ./kubernetes/helm/smlgpt \
+     --set image.backend.tag=latest \
+     --set image.frontend.tag=latest \
+     --set redis.enabled=true
+   ```
+
+### Option 3: Azure App Service
+
+1. **Create App Service Plan**
+   ```bash
+   az appservice plan create \
+     --name smlgpt-plan \
+     --resource-group smlgpt-rg \
+     --sku B2 \
+     --is-linux
+   ```
+
+2. **Deploy Backend**
+   ```bash
+   az webapp create \
+     --resource-group smlgpt-rg \
+     --plan smlgpt-plan \
+     --name smlgpt-backend \
+     --deployment-container-image-name smlgptregistry.azurecr.io/smlgpt-backend:latest
+   ```
+
+3. **Deploy Frontend**
+   ```bash
+   az webapp create \
+     --resource-group smlgpt-rg \
+     --plan smlgpt-plan \
+     --name smlgpt-frontend \
+     --deployment-container-image-name smlgptregistry.azurecr.io/smlgpt-frontend:latest
+   ```
+
+## Environment Configuration
+
+### Production Environment Variables
+
+Create a Key Vault for secrets:
+```bash
+az keyvault create \
+  --name smlgpt-vault \
+  --resource-group smlgpt-rg \
+  --location eastus2
+```
+
+Store secrets:
+```bash
+# Store all sensitive keys
+az keyvault secret set --vault-name smlgpt-vault --name "azure-openai-key" --value "your-key"
+az keyvault secret set --vault-name smlgpt-vault --name "azure-storage-connection" --value "your-connection-string"
+# ... repeat for all secrets
+```
+
+## SSL/TLS Configuration
+
+### Using Azure Front Door
+
+1. **Create Front Door**
+   ```bash
+   az network front-door create \
+     --resource-group smlgpt-rg \
+     --name smlgpt-fd \
+     --backend-address smlgpt-backend.azurewebsites.net
+   ```
+
+2. **Configure Custom Domain**
+   ```bash
+   az network front-door frontend-endpoint create \
+     --front-door-name smlgpt-fd \
+     --resource-group smlgpt-rg \
+     --name smlgpt-frontend \
+     --host-name www.yourdomain.com
+   ```
+
+## Monitoring and Logging
+
+### Application Insights
+
+1. **Create Application Insights**
+   ```bash
+   az monitor app-insights component create \
+     --app smlgpt-insights \
+     --location eastus2 \
+     --resource-group smlgpt-rg
+   ```
+
+2. **Configure Alerts**
+   ```bash
+   # CPU Alert
+   az monitor metrics alert create \
+     --name high-cpu \
+     --resource-group smlgpt-rg \
+     --scopes /subscriptions/{subscription}/resourceGroups/smlgpt-rg/providers/Microsoft.Web/sites/smlgpt-backend \
+     --condition "avg Percentage CPU > 80" \
+     --window-size 5m \
+     --evaluation-frequency 1m
+   ```
+
+### Log Analytics
+
+```bash
+# Create workspace
+az monitor log-analytics workspace create \
+  --resource-group smlgpt-rg \
+  --workspace-name smlgpt-logs
+
+# Enable diagnostics
+az monitor diagnostic-settings create \
+  --name smlgpt-diagnostics \
+  --resource /subscriptions/{subscription}/resourceGroups/smlgpt-rg/providers/Microsoft.Web/sites/smlgpt-backend \
+  --workspace smlgpt-logs \
+  --logs '[{"category": "AppServiceHTTPLogs", "enabled": true}]'
+```
+
+## Backup and Disaster Recovery
+
+### Database Backups
+```bash
+# Configure Redis backup
+az redis export \
+  --container container-name \
+  --prefix backup \
+  --name smlgpt-redis \
+  --resource-group smlgpt-rg \
+  --file-format RDB
+```
+
+### Blob Storage Lifecycle
+```json
+{
+  "rules": [
+    {
+      "name": "archiveOldFiles",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob"],
+          "prefixMatch": ["uploads/"]
+        },
+        "actions": {
+          "baseBlob": {
+            "tierToArchive": {
+              "daysAfterModificationGreaterThan": 90
+            },
+            "delete": {
+              "daysAfterModificationGreaterThan": 365
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+## Security Best Practices
+
+1. **Enable Azure Defender**
+   ```bash
+   az security pricing create \
+     --name AppServices \
+     --tier Standard
+   ```
+
+2. **Configure WAF**
+   ```bash
+   az network application-gateway waf-policy create \
+     --name smlgpt-waf \
+     --resource-group smlgpt-rg
+   ```
+
+3. **Enable Managed Identity**
+   ```bash
+   az webapp identity assign \
+     --name smlgpt-backend \
+     --resource-group smlgpt-rg
+   ```
+
+## Performance Optimization
+
+1. **Enable CDN for Static Assets**
+   ```bash
+   az cdn profile create \
+     --name smlgpt-cdn \
+     --resource-group smlgpt-rg \
+     --sku Standard_Microsoft
+   ```
+
+2. **Configure Auto-scaling**
+   ```bash
+   az monitor autoscale create \
+     --resource-group smlgpt-rg \
+     --name smlgpt-autoscale \
+     --resource /subscriptions/{subscription}/resourceGroups/smlgpt-rg/providers/Microsoft.Web/serverFarms/smlgpt-plan \
+     --min-count 2 \
+     --max-count 10 \
+     --count 2
+   ```
+
+## Quick Start Scripts
+
+### start.sh
+```bash
+#!/bin/bash
+# Quick start script for local development
+
+echo "🚀 Starting SMLGPT V2.0..."
+
+# Check dependencies
+command -v docker >/dev/null 2>&1 || { echo "Docker is required but not installed. Aborting." >&2; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo "npm is required but not installed. Aborting." >&2; exit 1; }
+
+# Start Redis
+echo "Starting Redis..."
+docker run -d --name smlgpt-redis -p 6379:6379 redis:7-alpine
+
+# Install dependencies
+echo "Installing backend dependencies..."
+cd backend && npm install
+
+echo "Installing frontend dependencies..."
+cd ../frontend && npm install
+
+# Start services
+echo "Starting backend..."
+cd ../backend && npm run dev &
+
+echo "Starting frontend..."
+cd ../frontend && npm run dev &
+
+echo "✅ SMLGPT V2.0 is running!"
+echo "Frontend: http://localhost:3000"
+echo "Backend: http://localhost:5000"
+```
+
+### deploy.sh
+```bash
+#!/bin/bash
+# Production deployment script
+
+set -e
+
+echo "🚀 Deploying SMLGPT V2.0..."
+
+# Build images
+docker-compose build
+
+# Run tests
+docker-compose run backend npm test
+docker-compose run frontend npm test
+
+# Push to registry
+docker-compose push
+
+# Deploy
+kubectl apply -f kubernetes/
+
+echo "✅ Deployment complete!"
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Azure Service Connection Issues**
+   - Verify all API keys are correct
+   - Check firewall rules allow connections
+   - Ensure services are in the same region
+
+2. **High Memory Usage**
+   - Increase container memory limits
+   - Enable Redis memory eviction policies
+   - Optimize image processing batch sizes
+
+3. **Slow Response Times**
+   - Enable Application Insights profiling
+   - Check for N+1 queries in logs
+   - Optimize Azure Search queries
+
+### Health Checks
+
+```bash
+# Backend health
+curl http://localhost:5000/health
+
+# Service status
+curl http://localhost:5000/api/status
+
+# Redis connection
+redis-cli ping
+```
+
+## Maintenance
+
+### Regular Tasks
+
+1. **Weekly**
+   - Review Application Insights dashboards
+   - Check for security updates
+   - Review error logs
+
+2. **Monthly**
+   - Update dependencies
+   - Review and optimize costs
+   - Performance testing
+
+3. **Quarterly**
+   - Security audit
+   - Disaster recovery drill
+   - Architecture review

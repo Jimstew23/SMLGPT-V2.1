@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: smlgpt
+
+resources:
+- namespace.yaml
+- redis.yaml
+- backend.yaml
+- frontend.yaml
+- ingress.yaml
+- hpa.yaml
+- monitoring.yaml
+
+images:
+- name: smlgptregistry.azurecr.io/smlgpt-backend
+  newTag: latest
+- name: smlgptregistry.azurecr.io/smlgpt-frontend
+  newTag: latest
+
+configMapGenerator:
+- name: backend-config
+  envs:
+  - .env.production
+
+secretGenerator:
+- name: azure-secrets
+  envs:
+  - .env.secrets
+
+replicas:
+- name: backend
+  count: 3
+- name: frontend
+  count: 2
+
+patchesStrategicMerge:
+- patches/production-patches.yaml
+
+commonLabels:
+  app.kubernetes.io/name: smlgpt
+  app.kubernetes.io/version: v2.0.0
+  app.kubernetes.io/component: ai-safety-platform

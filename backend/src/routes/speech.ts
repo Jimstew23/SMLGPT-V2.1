@@ -1,6 +1,7 @@
 // backend/src/routes/speech.ts
 import express from 'express';
 import multer from 'multer';
+import fetch from 'node-fetch';
 import { logger } from '../utils/logger';
 import { ValidationError, ExternalServiceError } from '../middleware/errorHandler';
 import { trackEvent, trackDependency } from '../services/monitoring';

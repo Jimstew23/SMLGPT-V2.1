@@ -6,14 +6,8 @@ import { trackEvent, trackDependency } from '../services/monitoring';
 
 const router = express.Router();
 
-// Azure OpenAI client setup
-import { AzureOpenAI } from 'openai';
-
-const openaiClient = new AzureOpenAI({
-  apiKey: process.env.AZURE_OPENAI_API_KEY!,
-  apiVersion: process.env.AZURE_OPENAI_API_VERSION!,
-  baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}`
-});
+// Use shared Azure OpenAI client
+import { openAIClient } from '../services/azureServices';
 
 // Document store for chat integration
 const documentStore = new Map<string, any>();
@@ -82,13 +76,15 @@ Maintain professional, safety-focused communication while being helpful and thor
     ];
 
     // Call GPT-4.1 for analysis
-    const response = await openaiClient.chat.completions.create({
-      model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME!,
-      messages: messages as any,
-      max_tokens: 2000,
-      temperature: 0.7,
-      top_p: 0.9
-    });
+    const response = await openAIClient.getChatCompletions(
+      process.env.AZURE_OPENAI_DEPLOYMENT_NAME!,
+      messages as any,
+      {
+        maxTokens: 2000,
+        temperature: 0.7,
+        topP: 0.9
+      }
+    );
 
     const aiResponse = response.choices[0]?.message?.content;
     

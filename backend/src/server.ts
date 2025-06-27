@@ -63,9 +63,6 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 app.use('/api', limiter);
 
-// Static files for uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
 // Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/upload', uploadRoutes);
@@ -78,7 +75,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    version: '2.0.0'
+    version: '2.1.0'
   });
 });
 

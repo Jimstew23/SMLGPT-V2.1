@@ -6,6 +6,7 @@ import { ApiKeyCredentials } from '@azure/ms-rest-js';
 import { SearchClient, SearchIndexClient } from '@azure/search-documents';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { SpeechConfig, AudioConfig, SpeechSynthesizer, SpeechRecognizer } from 'microsoft-cognitiveservices-speech-sdk';
+import fetch from 'node-fetch';
 import { logger } from '../utils/logger';
 
 // GPT-4.1 Vision Client
